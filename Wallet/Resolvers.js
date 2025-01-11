@@ -15,13 +15,35 @@ const usersResolver = () => {
 // Resolver to fetch wallet data for a user  
 const walletResolver = (parent, args) => {
   return new Promise((resolve, reject) => {
-    const query = 'SELECT wallet_id, balance FROM wallets WHERE user_id = ?';
+    const query = 'SELECT user_id, wallet_id, balance FROM wallets WHERE user_id = ?';
     connection.query(query, [args.user_id], (err, results) => {
-      if (err) reject(err);
-      resolve(results);
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      if (results.length === 0) {
+        resolve(null); // or handle the case where no wallet is found
+        return;
+      }
+
+      const wallet = results[0];
+      const balanceData = JSON.parse(wallet.balance);
+
+      const cryptos = Object.keys(balanceData).map(cryptoSymbol => ({
+        crypto_symbol: cryptoSymbol,
+        balance: balanceData[cryptoSymbol]
+      }));
+
+      resolve({
+        user_id: wallet.user_id,
+        wallet_id: wallet.wallet_id,
+        cryptos: cryptos
+      });
     });
   });
 };
+
 
 const createWalletResolver = (parent, args) => {
     return new Promise((resolve, reject) => {
@@ -47,7 +69,7 @@ const createWalletResolver = (parent, args) => {
 // Resolver to fetch purchase data for a user
 const purchasesResolver = (parent, args) => {
   return new Promise((resolve, reject) => {
-    const query = 'SELECT purchase_id, crypto_symbol, amount, price, purchase_date FROM purchases WHERE user_id = ?';
+    const query = 'SELECT purchase_id, crypto_symbol, amount, price, purchase_date, wallet_id FROM purchases WHERE user_id = ?';
     connection.query(query, [args.user_id], (err, results) => {
       if (err) reject(err);
       resolve(results);
