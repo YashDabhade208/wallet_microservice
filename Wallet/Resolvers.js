@@ -12,10 +12,10 @@ const usersResolver = () => {
   });
 };
 
-// Resolver to fetch wallet data for a user
+// Resolver to fetch wallet data for a user  
 const walletResolver = (parent, args) => {
   return new Promise((resolve, reject) => {
-    const query = 'SELECT wallet_id, crypto_symbol, balance FROM wallets WHERE user_id = ?';
+    const query = 'SELECT wallet_id, balance FROM wallets WHERE user_id = ?';
     connection.query(query, [args.user_id], (err, results) => {
       if (err) reject(err);
       resolve(results);
