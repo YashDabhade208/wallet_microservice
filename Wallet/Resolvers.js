@@ -24,24 +24,23 @@ const walletResolver = (parent, args) => {
 };
 
 const createWalletResolver = (parent, args) => {
-    return new Promise((resolve, reject) => {
-      // Assuming `balance` is a JSON object containing the cryptocurrencies
-      const initialBalance = {
-        BTC: 0,
-        ETH: 0,
-        LTC: 0
-      };
-  
-      const query = 'INSERT INTO wallets (user_id, balance) VALUES (?, ?)';
-      
-      // Insert the user_id and the initial balance as a JSON object
-      connection.query(query, [args.user_id, JSON.stringify(initialBalance)], (err, results) => {
-        if (err) reject(err);
-        resolve(results);
-      });
+  return new Promise((resolve, reject) => {
+    const query = 'INSERT INTO wallets (user_id, balance) VALUES (?, ?)';
+    
+    connection.query(query, [args.user_id, 10000], (err, results) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({
+          wallet_id: results.insertId,
+          user_id: args.user_id,
+          balance: 10000  
+        });
+      }
     });
-  };
-  
+  });
+};
+
   
 
 // Resolver to fetch purchase data for a user
@@ -61,7 +60,7 @@ const createUserResolver = (parent, args) => {
     const query = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
     connection.query(query, [args.username, args.email, args.password], (err, results) => {
       if (err) reject(err);
-      resolve({
+      return({
         user_id: results.insertId,
         username: args.username,
         email: args.email

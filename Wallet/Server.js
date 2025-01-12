@@ -10,7 +10,7 @@ app.use(cors());  // Allow all domains or configure for specific origins
 // Middleware to parse JSON data
 app.use(express.json());
 
-// Use GraphQL middleware
+// Use GraphQL middleware 
 app.use('/graphql', graphqlHTTP({
   schema: schema,
   graphiql: true  // Enables GraphiQL tool to test queries in the browser
