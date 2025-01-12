@@ -72,39 +72,42 @@ const createUserResolver = (parent, args) => {
 
 // Resolver to create a purchase and update the wallet
 const createPurchaseResolver = async (parent, args) => {
-  const balancequery =`select balance from wallets where user_id =?`
-     const  [currentBalance]  = await connection.query(balancequery,[args.user_id])
-    console.log(currentBalance[0].balance);
+  try {
+    const balancequery = `SELECT balance FROM wallets WHERE user_id = ?`;
+    const [currentBalance] = await connection.query(balancequery, [args.user_id]);
     
-      if(currentBalance<args.price){
-    
-       
-        
-        return res.status(500).json({message:"not enough balance"})
+    if (currentBalance[0].balance < args.price) {
+      throw new Error("Not enough balance");
     }
-    else{
-      
-      
-      const createpurchasequery = `insert into purchases (user_id,crypto_symbol,amount,price,purchase_date,wallet_id)
-      values (?,?,?,?,NOW(),?)`
-      const result = await connection.query(createpurchasequery,[args.user_id,args.crypto_symbol,args.amount,args.price,args.wallet_id])
-      console.log(result);
+    
+    // Insert purchase record
+    const createpurchasequery = `INSERT INTO purchases (user_id, crypto_symbol, amount, price, purchase_date, wallet_id)
+      VALUES (?, ?, ?, ?, NOW(), ?)`;
+    const [result] = await connection.query(createpurchasequery, [
+      args.user_id,
+      args.crypto_symbol,
+      args.amount,
+      args.price,
+      args.wallet_id
+    ]);
 
-      const updatewalletbalance = `update wallets set balance = ? where user_id = ?`;
-      const newBalance = currentBalance[0].balance - args.price;
-      const newBalance1 = newBalance.toFixed(8);
-      
-      console.log(newBalance1);
-      
-      // Use the correct query string here
-      const updatedBalance = await connection.query(updatewalletbalance, [newBalance1, args.user_id]);
-      
-      console.log(updatedBalance);
-      
-        
-    }
-    
-    
+    // Update wallet balance
+    const updatewalletbalance = `UPDATE wallets SET balance = ? WHERE user_id = ?`;
+    const newBalance = (currentBalance[0].balance - args.price).toFixed(8);
+    await connection.query(updatewalletbalance, [newBalance, args.user_id]);
+
+    // Return the created purchase record
+    return {
+      purchase_id: result.insertId,
+      user_id: args.user_id,
+      crypto_symbol: args.crypto_symbol,
+      amount: args.amount,
+      price: args.price,
+      wallet_id: args.wallet_id
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
 };
   
   
