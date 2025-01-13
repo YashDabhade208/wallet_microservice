@@ -1,6 +1,9 @@
 // resolvers.js
 const connection = require('./Config');
 
+// Instead of hardcoding specific crypto symbols, create an empty object
+const initialBalance = {};
+
 // Resolver to fetch users
 const usersResolver = () => {
   return new Promise((resolve, reject) => {
@@ -12,25 +15,43 @@ const usersResolver = () => {
   });
 };
 
-// Resolver to fetch wallet data for a user
+// Resolver to fetch wallet data for a user  
 const walletResolver = (parent, args) => {
   return new Promise((resolve, reject) => {
-    const query = 'SELECT wallet_id, crypto_symbol, balance FROM wallets WHERE user_id = ?';
+    const query = 'SELECT user_id, wallet_id, balance FROM wallets WHERE user_id = ?';
     connection.query(query, [args.user_id], (err, results) => {
-      if (err) reject(err);
-      resolve(results);
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      if (results.length === 0) {
+        resolve(null); // or handle the case where no wallet is found
+        return;
+      }
+
+      const wallet = results[0];
+      const balanceData = JSON.parse(wallet.balance);
+
+      const cryptos = Object.keys(balanceData).map(cryptoSymbol => ({
+        crypto_symbol: cryptoSymbol,
+        balance: balanceData[cryptoSymbol]
+      }));
+
+      resolve({
+        user_id: wallet.user_id,
+        wallet_id: wallet.wallet_id,
+        cryptos: cryptos
+      });
     });
   });
 };
 
+
 const createWalletResolver = (parent, args) => {
     return new Promise((resolve, reject) => {
-      // Assuming `balance` is a JSON object containing the cryptocurrencies
-      const initialBalance = {
-        BTC: 0,
-        ETH: 0,
-        LTC: 0
-      };
+      // Instead of hardcoding specific crypto symbols, create an empty object
+      const initialBalance = {};
   
       const query = 'INSERT INTO wallets (user_id, balance) VALUES (?, ?)';
       
@@ -47,7 +68,7 @@ const createWalletResolver = (parent, args) => {
 // Resolver to fetch purchase data for a user
 const purchasesResolver = (parent, args) => {
   return new Promise((resolve, reject) => {
-    const query = 'SELECT purchase_id, crypto_symbol, amount, price, purchase_date FROM purchases WHERE user_id = ?';
+    const query = 'SELECT purchase_id, crypto_symbol, amount, price, purchase_date, wallet_id FROM purchases WHERE user_id = ?';
     connection.query(query, [args.user_id], (err, results) => {
       if (err) reject(err);
       resolve(results);
@@ -56,18 +77,25 @@ const purchasesResolver = (parent, args) => {
 };
 
 // Resolver to create a new user
-const createUserResolver = (parent, args) => {
-  return new Promise((resolve, reject) => {
-    const query = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-    connection.query(query, [args.username, args.email, args.password], (err, results) => {
-      if (err) reject(err);
-      resolve({
-        user_id: results.insertId,
-        username: args.username,
-        email: args.email
-      });
-    });
-  });
+// const createUserResolver = (parent, args) => {
+//   return new Promise((resolve, reject) => {
+//     const query = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
+//     connection.query(query, [args.username, args.email, args.password], (err, results) => {
+//       if (err) reject(err);
+//       resolve({
+//         user_id: results.insertId,
+//         username: args.username,
+//         email: args.email
+//       });
+//     });
+//   });
+// };
+
+// Helper function to initialize balance for a new crypto
+const initializeCryptoBalance = (symbol) => {
+  if (!initialBalance.hasOwnProperty(symbol)) {
+    initialBalance[symbol] = 0;
+  }
 };
 
 // Resolver to create a purchase and update the wallet
@@ -79,6 +107,9 @@ const createPurchaseResolver = async (parent, args) => {
     if (currentBalance[0].balance < args.price) {
       throw new Error("Not enough balance");
     }
+    
+    // Initialize balance for this crypto if it doesn't exist
+    initializeCryptoBalance(args.crypto_symbol);
     
     // Insert purchase record
     const createpurchasequery = `INSERT INTO purchases (user_id, crypto_symbol, amount, price, purchase_date, wallet_id)
@@ -109,7 +140,6 @@ const createPurchaseResolver = async (parent, args) => {
     throw new Error(error.message);
   }
 };
-  
   
   const updateWalletBalanceResolver = (parent, args) => {
     return new Promise((resolve, reject) => {
@@ -150,7 +180,6 @@ module.exports = {
   usersResolver,
   walletResolver,
   purchasesResolver,
-  createUserResolver,
   createPurchaseResolver,
   createWalletResolver,
   updateWalletBalanceResolver
