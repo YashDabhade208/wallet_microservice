@@ -49,20 +49,23 @@ const walletResolver = (parent, args) => {
 
 
 const createWalletResolver = (parent, args) => {
-    return new Promise((resolve, reject) => {
-      // Instead of hardcoding specific crypto symbols, create an empty object
-      const initialBalance = {};
-  
-      const query = 'INSERT INTO wallets (user_id, balance) VALUES (?, ?)';
-      
-      // Insert the user_id and the initial balance as a JSON object
-      connection.query(query, [args.user_id, JSON.stringify(initialBalance)], (err, results) => {
-        if (err) reject(err);
-        resolve(results);
-      });
+  return new Promise((resolve, reject) => {
+    const query = 'INSERT INTO wallets (user_id, balance) VALUES (?, ?)';
+    
+    connection.query(query, [args.user_id, 10000], (err, results) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({
+          wallet_id: results.insertId,
+          user_id: args.user_id,
+          balance: 10000  
+        });
+      }
     });
-  };
-  
+  });
+};
+
   
 
 // Resolver to fetch purchase data for a user
@@ -76,7 +79,7 @@ const purchasesResolver = (parent, args) => {
   });
 };
 
-// Resolver to create a new user
+
 // const createUserResolver = (parent, args) => {
 //   return new Promise((resolve, reject) => {
 //     const query = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';

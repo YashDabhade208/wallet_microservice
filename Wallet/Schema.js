@@ -103,6 +103,8 @@ const Mutation = new GraphQLObjectType({
         user_id: { type: GraphQLInt }
       },
       resolve: createWalletResolver
+
+      
     }
     , updateWalletBalance: {
         type: WalletType,

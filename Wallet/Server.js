@@ -15,7 +15,7 @@ app.use(cors({
 // Middleware to parse JSON data
 app.use(express.json());
 
-// Use GraphQL middleware
+// Use GraphQL middleware 
 app.use('/graphql', graphqlHTTP({
   schema: schema,
   graphiql: true

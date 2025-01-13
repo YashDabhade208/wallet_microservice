@@ -1,5 +1,6 @@
 require('dotenv').config();
 const mysql = require('mysql2/promise'); // Use the promise-based wrapper
+ require('dotenv').config();
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
