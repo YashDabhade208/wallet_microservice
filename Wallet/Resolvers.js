@@ -48,22 +48,28 @@ const walletResolver = (parent, args) => {
 };
 
 
-const createWalletResolver = (parent, args) => {
-  return new Promise((resolve, reject) => {
-    const query = 'INSERT INTO wallets (user_id, balance) VALUES (?, ?)';
-    
-    connection.query(query, [args.user_id, 10000], (err, results) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({
-          wallet_id: results.insertId,
+const createWalletResolver = async (parent, args) => {
+  try {
+      console.log('Creating wallet for user_id:', args.user_id);
+      
+      const initialBalance = 100000.00000000; // Match your decimal(18,8) format
+      const query = 'INSERT INTO wallets (user_id, balance) VALUES (?, ?)';
+      
+      const [result] = await connection.query(query, [args.user_id, initialBalance]);
+      
+      console.log('Wallet created:', result);
+
+      // Return the created wallet data
+      return {
+          wallet_id: result.insertId,
           user_id: args.user_id,
-          balance: 10000  
-        });
-      }
-    });
-  });
+          balance: initialBalance
+      };
+
+  } catch (error) {
+      console.error('Error creating wallet:', error);
+      throw error;
+  }
 };
 
   
@@ -106,7 +112,9 @@ const createPurchaseResolver = async (parent, args) => {
   try {
     const balancequery = `SELECT balance FROM wallets WHERE user_id = ?`;
     const [currentBalance] = await connection.query(balancequery, [args.user_id]);
-    
+
+    console.log('Current balance:', currentBalance[0].balance);
+    console.log('Price:', args.price);
     if (currentBalance[0].balance < args.price) {
       throw new Error("Not enough balance");
     }
@@ -145,11 +153,11 @@ const createPurchaseResolver = async (parent, args) => {
 };
 
 const getWalletCryptoHoldings = async (parent, args) => {
-  console.log('Starting getWalletCryptoHoldings with wallet_id:', args.wallet_id);
+  console.log('Starting getWalletCryptoHoldings with user_id:', args.user_id);
   
-  if (!args.wallet_id) {
-      console.error('No wallet_id provided');
-      throw new Error('Wallet ID is required');
+  if (!args.user_id) {
+      console.error('No user_id provided');
+      throw new Error('User ID is required');
   }
 
   try {
@@ -160,14 +168,14 @@ const getWalletCryptoHoldings = async (parent, args) => {
           FROM 
               purchases p
           WHERE 
-              p.wallet_id = ?
+              p.user_id = ?
           GROUP BY 
               p.crypto_symbol
       `;
       
-      console.log('Executing query for wallet_id:', args.wallet_id);
+      console.log('Executing query for wallet_id:', args.user_id);
       
-      const [results] = await connection.query(query, [args.wallet_id]);
+      const [results] = await connection.query(query, [args.user_id]);
       
       console.log('Raw query results:', results);
       
@@ -232,5 +240,6 @@ module.exports = {
   purchasesResolver,
   createPurchaseResolver,
   createWalletResolver,
-  updateWalletBalanceResolver
+  updateWalletBalanceResolver,
+  getWalletCryptoHoldings
 };

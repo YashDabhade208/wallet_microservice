@@ -73,12 +73,7 @@ const RootQuery = new GraphQLObjectType({
     },
     getWalletHoldings: {
       type: new GraphQLList(CryptoType),
-      args: { wallet_id: { type: GraphQLInt } },
-      resolve: getWalletCryptoHoldings
-    },
-    getWalletHoldings: {
-      type: new GraphQLList(CryptoType),
-      args: { wallet_id: { type: GraphQLInt } },
+      args: { user_id: { type: GraphQLInt } },
       resolve: getWalletCryptoHoldings
     }
   }
