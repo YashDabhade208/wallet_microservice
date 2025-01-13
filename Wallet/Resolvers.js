@@ -143,6 +143,53 @@ const createPurchaseResolver = async (parent, args) => {
     throw new Error(error.message);
   }
 };
+
+const getWalletCryptoHoldings = async (parent, args) => {
+  console.log('Starting getWalletCryptoHoldings with wallet_id:', args.wallet_id);
+  
+  if (!args.wallet_id) {
+      console.error('No wallet_id provided');
+      throw new Error('Wallet ID is required');
+  }
+
+  try {
+      const query = `
+          SELECT 
+              p.crypto_symbol,
+              SUM(p.amount) as balance
+          FROM 
+              purchases p
+          WHERE 
+              p.wallet_id = ?
+          GROUP BY 
+              p.crypto_symbol
+      `;
+      
+      console.log('Executing query for wallet_id:', args.wallet_id);
+      
+      const [results] = await connection.query(query, [args.wallet_id]);
+      
+      console.log('Raw query results:', results);
+      
+      if (!results || results.length === 0) {
+          console.log('No holdings found for wallet');
+          return [];
+      }
+
+      // Format results
+      const holdings = results.map(row => ({
+          crypto_symbol: row.crypto_symbol,
+          balance: parseFloat(row.balance)
+      }));
+
+      console.log('Formatted holdings:', holdings);
+      return holdings;
+
+  } catch (error) {
+      console.error('Error fetching wallet holdings:', error);
+      throw error;
+  }
+};
   
   const updateWalletBalanceResolver = (parent, args) => {
     return new Promise((resolve, reject) => {

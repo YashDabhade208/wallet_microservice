@@ -7,7 +7,8 @@ const {
   createUserResolver, 
   createPurchaseResolver,
   createWalletResolver,
-  updateWalletBalanceResolver
+  updateWalletBalanceResolver,
+  getWalletCryptoHoldings
 } = require('./Resolvers');
 
 // Define the CryptoType (which represents each cryptocurrency and its balance)
@@ -69,6 +70,16 @@ const RootQuery = new GraphQLObjectType({
       type: new GraphQLList(PurchaseType),
       args: { user_id: { type: GraphQLInt } },
       resolve: purchasesResolver
+    },
+    getWalletHoldings: {
+      type: new GraphQLList(CryptoType),
+      args: { wallet_id: { type: GraphQLInt } },
+      resolve: getWalletCryptoHoldings
+    },
+    getWalletHoldings: {
+      type: new GraphQLList(CryptoType),
+      args: { wallet_id: { type: GraphQLInt } },
+      resolve: getWalletCryptoHoldings
     }
   }
 });
@@ -103,8 +114,6 @@ const Mutation = new GraphQLObjectType({
         user_id: { type: GraphQLInt }
       },
       resolve: createWalletResolver
-
-      
     }
     , updateWalletBalance: {
         type: WalletType,
