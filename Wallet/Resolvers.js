@@ -259,14 +259,22 @@ const getWalletCryptoHoldings = async (parent, args) => {
       });
     });
   };
-  const getBalanceResolver = (parent, args) => {
-    return new Promise((resolve, reject) => {
+  const getBalanceResolver = async (parent, args) => {
+    try {
       const query = 'SELECT balance FROM wallets WHERE user_id = ?';
-      connection.query(query, [args.user_id], (err, results) => {
-        if (err) reject(err);
-        resolve(results[0].balance);
-      });
-    });
+      const [results] = await connection.query(query, [args.user_id]);
+      
+      if (!results || results.length === 0) {
+        throw new Error('Wallet not found for this user');
+      }
+      
+      // Return the balance directly
+      return parseFloat(results[0].balance);
+      
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      throw error;
+    }
   };
   
 module.exports = {

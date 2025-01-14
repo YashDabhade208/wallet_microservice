@@ -93,7 +93,9 @@ const RootQuery = new GraphQLObjectType({
     },
     getBalance: {
       type: GraphQLFloat,
-      args: { user_id: { type: GraphQLInt } },
+      args: {
+        user_id: { type: GraphQLInt }
+      },
       resolve: getBalanceResolver
     }
   }
