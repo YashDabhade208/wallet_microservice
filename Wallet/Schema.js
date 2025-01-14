@@ -55,6 +55,19 @@ const PurchaseType = new GraphQLObjectType({
   })
 });
 
+// Define the SellType
+const SellType = new GraphQLObjectType({
+  name: 'Sell',
+  fields: () => ({
+    sell_id: { type: GraphQLInt },
+    crypto_symbol: { type: GraphQLString },
+    amount: { type: GraphQLFloat },
+    price: { type: GraphQLFloat },
+    sell_date: { type: GraphQLString },
+    wallet_id: { type: GraphQLInt }
+  })
+});
+
 // RootQuery to fetch users, wallets, and purchases
 const RootQuery = new GraphQLObjectType({
   name: 'RootQueryType',
@@ -135,6 +148,7 @@ const Mutation = new GraphQLObjectType({
         },
         resolve: createsellResolver
       }
+      
   }
 });
 
