@@ -144,7 +144,9 @@ const Mutation = new GraphQLObjectType({
         args: {
           user_id: { type: GraphQLInt },
           crypto_symbol: { type: GraphQLString },
-          amount: { type: GraphQLFloat }
+          amount: { type: GraphQLFloat },
+          price: { type: GraphQLFloat },
+          wallet_id: { type: GraphQLInt }
         },
         resolve: createsellResolver
       }
