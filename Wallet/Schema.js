@@ -8,7 +8,8 @@ const {
   createPurchaseResolver,
   createWalletResolver,
   updateWalletBalanceResolver,
-  getWalletCryptoHoldings
+  getWalletCryptoHoldings,
+  createsellResolver
 } = require('./Resolvers');
 
 // Define the CryptoType (which represents each cryptocurrency and its balance)
@@ -118,6 +119,15 @@ const Mutation = new GraphQLObjectType({
           amount: { type: GraphQLFloat }
         },
         resolve: updateWalletBalanceResolver
+      },
+      createSell: {
+        type: SellType,
+        args: {
+          user_id: { type: GraphQLInt },
+          crypto_symbol: { type: GraphQLString },
+          amount: { type: GraphQLFloat }
+        },
+        resolve: createsellResolver
       }
   }
 });

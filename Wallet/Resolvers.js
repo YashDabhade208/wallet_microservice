@@ -152,6 +152,32 @@ const createPurchaseResolver = async (parent, args) => {
   }
 };
 
+  const  createsellResolver = async (parent, args) => {
+    return new Promise((resolve, reject) => {
+
+      const balancequery = `SELECT balance FROM wallets WHERE user_id = ?`;
+      const [currentBalance] =  connection.query(balancequery, [args.user_id]);
+
+      const query = 'INSERT INTO purchase (user_id, crypto_symbol, amount, price, purchase_date, wallet_id) VALUES (?, ?, ?, ?, NOW(), ?)';
+   const [result] = connection.query(query, [args.user_id, args.crypto_symbol, args.amount, args.price, args.wallet_id], (err, results) => {
+        const updatewalletbalance = `UPDATE wallets SET balance = ? WHERE user_id = ?`;
+        const newBalance = (currentBalance[0].balance + args.price).toFixed(8);
+         connection.query(updatewalletbalance, [newBalance, args.user_id]);
+        if (err) reject(err);
+        resolve(results);
+        return {
+          purchase_id: result.insertId,
+          user_id: args.user_id,
+          crypto_symbol: args.crypto_symbol,
+          amount: args.amount,
+          price: args.price,
+          wallet_id: args.wallet_id
+        };
+      });
+    });
+  };
+
+
 const getWalletCryptoHoldings = async (parent, args) => {
   console.log('Starting getWalletCryptoHoldings with user_id:', args.user_id);
   
@@ -241,5 +267,6 @@ module.exports = {
   createPurchaseResolver,
   createWalletResolver,
   updateWalletBalanceResolver,
-  getWalletCryptoHoldings
+  getWalletCryptoHoldings,
+  createsellResolver
 };
