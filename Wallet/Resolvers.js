@@ -259,6 +259,15 @@ const getWalletCryptoHoldings = async (parent, args) => {
       });
     });
   };
+  const getBalanceResolver = (parent, args) => {
+    return new Promise((resolve, reject) => {
+      const query = 'SELECT balance FROM wallets WHERE user_id = ?';
+      connection.query(query, [args.user_id], (err, results) => {
+        if (err) reject(err);
+        resolve(results[0].balance);
+      });
+    });
+  };
   
 module.exports = {
   usersResolver,
@@ -268,5 +277,6 @@ module.exports = {
   createWalletResolver,
   updateWalletBalanceResolver,
   getWalletCryptoHoldings,
-  createsellResolver
+  createsellResolver,
+  getBalanceResolver
 };
