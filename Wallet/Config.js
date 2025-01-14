@@ -15,6 +15,8 @@ const pool = mysql.createPool({
     connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT, 10),
 });
 
+
+
 // Test connection and log confirmation
 (async () => {
     try {
