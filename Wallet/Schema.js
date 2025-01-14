@@ -150,6 +150,8 @@ const Mutation = new GraphQLObjectType({
           price: { type: GraphQLFloat },
           wallet_id: { type: GraphQLInt }
         },
+
+        
         resolve: createsellResolver
       }
       
