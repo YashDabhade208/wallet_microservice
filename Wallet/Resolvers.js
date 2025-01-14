@@ -52,7 +52,7 @@ const createWalletResolver = async (parent, args) => {
   try {
       console.log('Creating wallet for user_id:', args.user_id);
       
-      const initialBalance = 100000.00000000; // Match your decimal(18,8) format
+      const initialBalance = 1000000.00000000; // Match your decimal(18,8) format
       const query = 'INSERT INTO wallets (user_id, balance) VALUES (?, ?)';
       
       const [result] = await connection.query(query, [args.user_id, initialBalance]);
