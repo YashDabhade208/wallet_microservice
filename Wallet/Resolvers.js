@@ -152,31 +152,71 @@ const createPurchaseResolver = async (parent, args) => {
   }
 };
 
-  const  createsellResolver = async (parent, args) => {
-    return new Promise((resolve, reject) => {
+const createsellResolver = async (parent, args) => {
+  try {
+    // Get current balance
+    const balancequery = `SELECT balance FROM wallets WHERE user_id = ?`;
+    const [balanceResults] = await connection.query(balancequery, [args.user_id]);
+    
+    if (!balanceResults || balanceResults.length === 0) {
+      throw new Error('Wallet not found');
+    }
 
-      const balancequery = `SELECT balance FROM wallets WHERE user_id = ?`;
-      const [currentBalance] =  connection.query(balancequery, [args.user_id]);
+    const currentBalance = parseFloat(balanceResults[0].balance);
 
-      const query = 'INSERT INTO purchase (user_id, crypto_symbol, amount, price, purchase_date, wallet_id) VALUES (?, ?, ?, ?, NOW(), ?)';
-   const [result] = connection.query(query, [args.user_id, args.crypto_symbol, args.amount, args.price, args.wallet_id], (err, results) => {
-        const updatewalletbalance = `UPDATE wallets SET balance = ? WHERE user_id = ?`;
-        const newBalance = (currentBalance[0].balance + args.price).toFixed(8);
-         connection.query(updatewalletbalance, [newBalance, args.user_id]);
-        if (err) reject(err);
-        resolve(results);
-        return {
-          purchase_id: result.insertId,
-          user_id: args.user_id,
-          crypto_symbol: args.crypto_symbol,
-          amount: args.amount,
-          price: args.price,
-          wallet_id: args.wallet_id
-        };
-      });
-    });
-  };
+    const amountquery = `
+SELECT 
+    w.wallet_id,
+    p.crypto_symbol,
+    SUM(p.amount) AS total_amount
+FROM 
+    wallets w
+JOIN 
+    purchases p ON w.user_id = p.user_id
+WHERE 
+    w.user_id = ? and p.crypto_symbol = ?
+GROUP BY 
+    p.crypto_symbol;`;
+    
+    const [amountResults] = await connection.query(amountquery, [args.user_id, args.crypto_symbol]);
+    
+    if (!amountResults || amountResults.length === 0) {
+      throw new Error('No crypto holdings found');
+    }
 
+    if (amountResults[0].total_amount < args.amount) {
+      throw new Error('Not enough crypto to sell');
+    }
+
+    // Insert sell record into purchases table
+    const query = 'INSERT INTO purchases (user_id, crypto_symbol, amount, price, purchase_date, wallet_id) VALUES (?, ?, ?, ?, NOW(), ?)';
+    const [result] = await connection.query(query, [
+      args.user_id,
+      args.crypto_symbol,
+      -args.amount, 
+      args.price,
+      args.wallet_id
+    ]);
+
+    // Update wallet balance
+    const updatewalletbalance = `UPDATE wallets SET balance = ? WHERE user_id = ?`;
+    const newBalance = (currentBalance + args.price).toFixed(8);
+    await connection.query(updatewalletbalance, [newBalance, args.user_id]);
+
+    // Return the created sell record
+    return {
+      sell_id: result.insertId,
+      user_id: args.user_id,
+      crypto_symbol: args.crypto_symbol,
+      amount: args.amount,
+      price: args.price,
+      wallet_id: args.wallet_id
+    };
+  } catch (error) {
+    console.error('Error creating sell:', error);
+    throw error;
+  }
+};
 
 const getWalletCryptoHoldings = async (parent, args) => {
   console.log('Starting getWalletCryptoHoldings with user_id:', args.user_id);
