@@ -14,7 +14,9 @@ app.use(cors({
 
 // Middleware to parse JSON data
 app.use(express.json());
-
+app.get('/getout',(req,res)=>{
+   return  res.status(200).json({message:"DAMMN"})
+})
 // Use GraphQL middleware 
 app.use('/graphql', graphqlHTTP({
   schema: schema,
